@@ -1,100 +1,89 @@
-# AmCache-EvilHunter
+# AMCache-Triage
 
-`AmCache-EvilHunter` is a command-line tool to parse and analyze Windows `Amcache.hve` registry hives, identify evidence of execution, suspicious executables, and integrate VirusTotal lookups for enhanced threat intelligence.
+🚀 Fast, scriptable triage tool for Windows `Amcache.hve` registry hives — with SHA-1 extraction, hash whitelisting, and optional VirusTotal enrichment.
 
-https://github.com/user-attachments/assets/e23fb99b-48ad-4260-b372-2f15e5320c74
+---
 
-## Features
+## 🔍 What It Does
 
-* Parse offline `Amcache.hve` registry hives.
-* Filter records by date range (`--start`, `--end`).
-* Search records using keywords (`--search`).
-* Identify known suspicious executables (`--find-suspicious`).
-* VirusTotal integration for hash lookups (`--vt`, `--only-detections`).
-* Export results to JSON (`--json`) or CSV (`--csv`).
+This tool parses the Windows `Amcache.hve` registry file to extract metadata about executed binaries (paths, hashes, timestamps). It improves traditional triage workflows by:
 
-## Requirements
+- 🧼 Whitelisting known-good hashes via [hashlookup.circl.lu](https://hashlookup.circl.lu)
+- 🔒 Querying [VirusTotal](https://www.virustotal.com/) only for unknown or suspicious hashes
+- 🧾 Exporting clean CSV and JSON reports
+- 📊 Displaying results in a terminal UI with optional highlighting of malicious files
 
-* Python 3.7 or higher
-* [requests](https://pypi.org/project/requests/)
-* [python-registry](https://pypi.org/project/python-registry/)
-* [rich](https://pypi.org/project/rich/)
+---
 
-Install dependencies via `pip`:
+## 📦 Features
 
-```bash
-pip3 install -r requirements.txt
-```
+- ✅ Parses both modern and legacy Amcache formats
+- ✅ Bulk SHA-1 lookup against CIRCL Hashlookup
+- ✅ Optional VirusTotal enrichment (`--vt`)
+- ✅ Filters out known OS/system binaries
+- ✅ Outputs to CSV or JSON
+- ✅ Interactive console view with [rich](https://github.com/Textualize/rich)
+- 🐧 100% offline-capable (except for VT)
 
-## Installation
+---
 
-```bash
-git clone https://github.com/cristianzsh/amcache-evilhunter.git
-cd amcache-evilhunter
-pip3 install -r requirements.txt
-```
-
-## Usage
+## 📸 Example Usage
 
 ```bash
-python3 amcache_evilhunter.py -i path/to/Amcache.hve [OPTIONS]
-```
+export VT_API_KEY=your_virustotal_key
 
-### Options
+python amcache_triage.py \
+  --input /path/to/Amcache.hve \
+  --csv report.csv \
+  --vt \
+  --only-detections
+````
 
-| Flag                 | Description                                                    |
-| -------------------- | -------------------------------------------------------------- |
-| `-i`, `--input PATH` | Path to `Amcache.hve` (required)                               |
-| `--start YYYY-MM-DD` | Only include records on or after this date                     |
-| `--end YYYY-MM-DD`   | Only include records on or before this date                    |
-| `--search TERMS`     | Comma-separated, case-insensitive search terms                 |
-| `--find-suspicious`  | Filter only records matching known suspicious patterns         |
-| `-v`, `--vt`         | Enable VirusTotal lookups (requires `VT_API_KEY` env variable) |
-| `--only-detections`  | Show/save only files with ≥1 VT detection                      |
-| `--json PATH`        | Path to write full JSON output                                 |
-| `--csv PATH`         | Path to write full CSV output                                  |
-| `-V`, `--version`    | Show version information                                       |
-
-## Examples
-
-* **Parse and display all records**:
-
-  ```bash
-  python3 amcache_evilhunter.py -i Amcache.hve
-  ```
-
-* **Filter by date range and search for "notepad"**:
-
-  ```bash
-  python3 amcache_evilhunter.py -i Amcache.hve --start 2021-01-01 --end 2021-12-31 --search notepad
-  ```
-
-* **Identify suspicious executables and query VirusTotal**:
-
-  ```bash
-  python3 amcache_evilhunter.py -i Amcache.hve --find-suspicious -v
-  ```
-
-* **Export VirusTotal detections to JSON**:
-
-  ```bash
-  export VT_API_KEY=YOUR_API_KEY
-  python3 amcache_evilhunter.py -i Amcache.hve -v --only-detections --json detections.json
-  ```
-
-## Environment variables
-
-* `VT_API_KEY`: Your VirusTotal API key used for file hash lookups.
-
-## Building executables
-
-A `build.sh` script is provided to generate standalone binaries for both Linux and Windows (via Wine).
+Or run without VT:
 
 ```bash
-chmod +x build.sh
-./build.sh
+python amcache_triage.py --input Amcache.hve --csv report.csv
 ```
 
-## License
+---
 
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+## 🔐 Why Whitelist First?
+
+Free VirusTotal API keys are limited to **500 requests/day**.
+This tool first checks known hashes using [hashlookup.circl.lu](https://hashlookup.circl.lu), skipping known system binaries and saving precious VT quota for the real unknowns.
+
+---
+
+## 💡 Possible Extensions
+
+* Add support for local NSRL hash whitelists
+* Create an OpenCTI/OpenRELiK worker
+* Add support for MalwareBazaar or Hybrid Analysis API
+* Web UI or MISP enrichment module
+
+---
+
+## 🛠 Requirements
+
+* Python 3.8+
+* `python-registry`, `requests`, `rich`
+
+Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+## 📖 Credits
+
+* Original code: [Cristian Souza](https://github.com/cristianmsbr) — *Amcache-EvilHunter*
+* Forked and extended by: Thomas Lowagie
+  License: MIT
+
+---
+
+## 🪪 License
+
+This project is licensed under the MIT License. See [`LICENSE`](LICENSE) for details.
