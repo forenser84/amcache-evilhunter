@@ -2,7 +2,7 @@
 
 """
 AmCache-EvilHunter : Fast AMCache Triage Hash 'em All (Without Wasting API Credits)
-Author: Thomams Lowagie
+Author: Thomas Lowagie
 Based on the works of Cristian Souza (cristianmsbr@gmail.com)
 Short script for Pass the SALT rump session
 """
@@ -463,7 +463,8 @@ def main():
             if "SHA-1" in vals
         }
 
-        known_sha1 = query_hashlookup_bulk(list(all_sha1))
+        known_sha1 = {h.lower() for h in query_hashlookup_bulk(list(all_sha1))}
+        #print(known_sha1)
         if known_sha1:
             console.print(f"[green]Hashlookup: {len(known_sha1)} known hashes found[/]")
 
