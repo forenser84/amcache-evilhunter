@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
 """
-AmCache-EvilHunter: parse and analyze a Windows Amcache.hve registry hive.
-by Cristian Souza (cristianmsbr@gmail.com)
+AmCache-EvilHunter : Fast AMCache Triage Hash 'em All (Without Wasting API Credits)
+Author: Thomams Lowagie
+Based on the works of Cristian Souza (cristianmsbr@gmail.com)
+Short script for Pass the SALT rump session
 """
 
 import argparse
@@ -20,6 +22,7 @@ from requests.exceptions import HTTPError
 
 from Registry.Registry import Registry as RegistryHive
 from Registry.RegistryParse import ParseException as RegistryParseException
+#pip install python-registry requests
 
 from rich.console import Console
 from rich.table import Table
@@ -44,6 +47,30 @@ KEEP_FIELDS = {
 }
 
 console = Console()
+
+HASHLOOKUP_URL = "https://hashlookup.circl.lu/bulk/sha1"
+
+def query_hashlookup_bulk(sha1_hashes):
+    """Query CIRCL Hashlookup bulk endpoint and return set of known SHA-1."""
+    try:
+        resp = requests.post(
+            HASHLOOKUP_URL,
+            headers={"Content-Type": "application/json"},
+            data=json.dumps({"hashes": sha1_hashes}),
+            timeout=15
+        )
+        if resp.status_code == 200:
+            results = resp.json()
+            return set(entry["SHA-1"] for entry in results)
+        elif resp.status_code == 404:
+            return set()
+        else:
+            console.print(f"[red]Hashlookup error {resp.status_code}: {resp.text}[/]")
+            return set()
+    except Exception as e:
+        console.print(f"[red]Hashlookup request failed: {e}[/]")
+        return set()
+
 
 def find_suspicious(data):
     """
@@ -428,6 +455,26 @@ def main():
         data = parser.parse()
 
         normalize_data(data)
+        # ---- Hashlookup filtering ----
+        all_sha1 = {
+            vals["SHA-1"]
+            for recs in data.values()
+            for vals in recs.values()
+            if "SHA-1" in vals
+        }
+
+        known_sha1 = query_hashlookup_bulk(list(all_sha1))
+        if known_sha1:
+            console.print(f"[green]Hashlookup: {len(known_sha1)} known hashes found[/]")
+
+        # Filtrer les fichiers connus
+        for cat in list(data.keys()):
+            recs = data[cat]
+            for rec in list(recs.keys()):
+                if recs[rec].get("SHA-1") in known_sha1:
+                    del recs[rec]
+            if not recs:
+                del data[cat]
 
         if search_terms:
             filtered = {}
